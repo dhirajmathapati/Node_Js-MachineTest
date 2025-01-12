@@ -1,0 +1,100 @@
+const express = require('express');
+const mysql = require('mysql2');
+const bodyParser = require('body-parser');
+
+const app = express();
+const port = 3000;
+
+// Database connection
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'password',
+  database: 'store_db'
+});
+
+// Middleware for parsing JSON
+app.use(bodyParser.json());
+
+// API Endpoints
+
+// 1. Get products with pagination
+app.get('/products', (req, res) => {
+  const page = req.query.page || 1;
+  const pageSize = 10; // Number of records per page
+  const offset = (page - 1) * pageSize;
+
+  const query = `
+    SELECT p.ProductId, p.ProductName, c.CategoryName, p.CategoryId
+    FROM Products p
+    JOIN Categories c ON p.CategoryId = c.CategoryId
+    LIMIT ?, ?
+  `;
+  
+  db.query(query, [offset, pageSize], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.json(results);
+  });
+});
+
+// 2. Get all categories
+app.get('/categories', (req, res) => {
+  const query = 'SELECT * FROM Categories';
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.json(results);
+  });
+});
+
+// 3. Create a new product
+app.post('/products', (req, res) => {
+  const { ProductName, CategoryId } = req.body;
+  
+  const query = 'INSERT INTO Products (ProductName, CategoryId) VALUES (?, ?)';
+  
+  db.query(query, [ProductName, CategoryId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.json({ message: 'Product created', ProductId: results.insertId });
+  });
+});
+
+// 4. Update a product
+app.put('/products/:id', (req, res) => {
+  const ProductId = req.params.id;
+  const { ProductName, CategoryId } = req.body;
+  
+  const query = 'UPDATE Products SET ProductName = ?, CategoryId = ? WHERE ProductId = ?';
+  
+  db.query(query, [ProductName, CategoryId, ProductId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.json({ message: 'Product updated' });
+  });
+});
+
+// 5. Delete a product
+app.delete('/products/:id', (req, res) => {
+  const ProductId = req.params.id;
+  
+  const query = 'DELETE FROM Products WHERE ProductId = ?';
+  
+  db.query(query, [ProductId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database error', error: err });
+    }
+    res.json({ message: 'Product deleted' });
+  });
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
