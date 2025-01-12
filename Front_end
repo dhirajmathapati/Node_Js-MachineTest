@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Master</title>
+</head>
+<body>
+    <h1>Category Master</h1>
+    
+    <form id="categoryForm">
+        <label for="CategoryName">Category Name:</label>
+        <input type="text" id="CategoryName" required>
+        <button type="submit">Add Category</button>
+    </form>
+
+    <h2>Categories List</h2>
+    <ul id="categoryList"></ul>
+
+    <script>
+        // Fetch categories and display
+        function fetchCategories() {
+            fetch('/categories')
+                .then(response => response.json())
+                .then(data => {
+                    const categoryList = document.getElementById('categoryList');
+                    categoryList.innerHTML = '';
+                    data.forEach(category => {
+                        const li = document.createElement('li');
+                        li.textContent = category.CategoryName;
+                        categoryList.appendChild(li);
+                    });
+                });
+        }
+
+        
+        document.getElementById('categoryForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const categoryName = document.getElementById('CategoryName').value;
+            fetch('/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ CategoryName: categoryName })
+            })
+            .then(() => fetchCategories());
+        });
+
+        
+        fetchCategories();
+    </script>
+</body>
+</html>
+2. Product Master Page with Pagination
+html
+Copy code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Master</title>
+</head>
+<body>
+    <h1>Product Master</h1>
+    
+    <form id="productForm">
+        <label for="ProductName">Product Name:</label>
+        <input type="text" id="ProductName" required>
+        
+        <label for="CategoryId">Category:</label>
+        <select id="CategoryId" required></select>
+        
+        <button type="submit">Add Product</button>
+    </form>
+
+    <h2>Products List</h2>
+    <ul id="productList"></ul>
+
+    <button id="prevPage">Previous</button>
+    <button id="nextPage">Next</button>
+
+    <script>
+        let currentPage = 1;
+
+        
+        function fetchCategories() {
+            fetch('/categories')
+                .then(response => response.json())
+                .then(data => {
+                    const categorySelect = document.getElementById('CategoryId');
+                    categorySelect.innerHTML = '';
+                    data.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.CategoryId;
+                        option.textContent = category.CategoryName;
+                        categorySelect.appendChild(option);
+                    });
+                });
+        }
+
+        
+        function fetchProducts(page) {
+            fetch(`/products?page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    const productList = document.getElementById('productList');
+                    productList.innerHTML = '';
+                    data.forEach(product => {
+                        const li = document.createElement('li');
+                        li.textContent = `${product.ProductId} - ${product.ProductName} - ${product.CategoryName}`;
+                        productList.appendChild(li);
+                    });
+                });
+        }
+
+      
+        document.getElementById('productForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const productName = document.getElementById('ProductName').value;
+            const categoryId = document.getElementById('CategoryId').value;
+            fetch('/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ProductName: productName, CategoryId: categoryId })
+            })
+            .then(() => fetchProducts(currentPage));
+        });
+
+        
+        document.getElementById('prevPage').addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchProducts(currentPage);
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', function() {
+            currentPage++;
+            fetchProducts(currentPage);
+        });
+
+    
+        fetchCategories();
+        fetchProducts(currentPage);
+    </script>
+</body>
+</html>
